@@ -7,9 +7,8 @@
 //
 
 import UIKit
-import StoreKit
 
-enum Response<Value> {
+public enum Response<Value> {
     case success(Value)
     case failure(Error)
 }
@@ -19,6 +18,7 @@ struct Payment {
     let currency: String
 }
 
+// MARK: - StoreKit taming
 protocol SatelliteProduct: NSObjectProtocol {
     
     var price: NSDecimalNumber { get }
@@ -26,147 +26,156 @@ protocol SatelliteProduct: NSObjectProtocol {
     var productIdentifier: String { get }
 }
 
+protocol SatelliteProductsRequest: NSObjectProtocol {
+    func start()
+}
+
+protocol SatelliteTransaction {
+    var error: Error? { get }
+    var isPurchasedOrRestored: Bool { get }
+    var productIdentifier: String { get }
+}
+
+// MARK: - store engine
+protocol SatelliteEngineDelegate: class {
+    
+    func productsRequest(_ request: SatelliteProductsRequest, didReceive response: [SatelliteProduct])
+    func restoreCompletedTransactionsFailed(error: Error)
+    func restoreCompletedTransactionsFinished(identifiers: [String])
+    func updatedTransactions(_ transactions: [SatelliteTransaction])
+}
+
+protocol SatelliteEngineProtocol: class {
+    
+    var delegate: SatelliteEngineDelegate? { get set }
+    var canMakePayments: Bool { get }
+    
+    func purchase(product: SatelliteProduct) throws
+    func fetchProduct(identifier: String) -> SatelliteProductsRequest
+    func restoreCompletedTransactions()
+    func complete(transaction: SatelliteTransaction)
+}
+
+// MARK: - store class
 protocol SatelliteStoreProtocol {
     var isOpenForBusiness: Bool { get }
     
-    func getProduct(identifier: String, completion: @escaping (Response<SKProduct>) -> Void)
+    func getProduct(identifier: String, completion: @escaping (Response<SatelliteProduct>) -> Void)
     func purchaseProduct(identifier: String, completion: @escaping (Response<Payment>) -> Void)
     func restorePurchases(completion: @escaping (Response<[String]>) -> Void)
 }
 
-open class SatelliteStore: NSObject, SatelliteStoreProtocol, SKPaymentTransactionObserver, SKProductsRequestDelegate {
+open class SatelliteStore: SatelliteStoreProtocol, SatelliteEngineDelegate {
     
-    static var shoppingCenter = SatelliteStore()
+    static var shoppingCenter = SatelliteStore(engine: SatelliteEngine())
     
     fileprivate struct Purchase: Equatable {
-        let product: SKProduct
+        let product: SatelliteProduct
         let completion: (Response<Payment>) -> Void
     }
     
     fileprivate struct Fetch {
-        let productIdentifier: String
-        let request: SKProductsRequest
-        let completion: (Response<SKProduct>) -> Void
-        
-        init(productIdentifier: String, completion: @escaping (Response<SKProduct>) -> Void) {
-            self.productIdentifier = productIdentifier
-            self.completion = completion
-            let set = Set([productIdentifier])
-            self.request = SKProductsRequest(productIdentifiers: set)
-        }
+        let request: SatelliteProductsRequest
+        let completion: (Response<SatelliteProduct>) -> Void
     }
+    
+    fileprivate let engine: SatelliteEngineProtocol
     
     fileprivate var purchases = [Purchase]()
     fileprivate var fetches = [Fetch]()
     fileprivate let lock = NSLock()
     fileprivate var restoreCompletion: ((Response<[String]>) -> Void)?
     
-    override init() {
-        super.init()
-        SKPaymentQueue.default().add(self)
+    init(engine: SatelliteEngineProtocol) {
+        self.engine = engine
+        engine.delegate = self
     }
     
     var isOpenForBusiness: Bool {
-        return SKPaymentQueue.canMakePayments()
+        return engine.canMakePayments
     }
     
     func purchaseProduct(identifier: String, completion: @escaping (Response<Payment>) -> Void) {
         getProduct(identifier: identifier) { response in
             switch response {
             case .success(let product):
-                self.purchaseProduct(product, completion: completion)
+                try! self.purchaseProduct(product, completion: completion)
             case .failure(let error):
                 completion(.failure(error))
             }
         }
     }
     
-    fileprivate func purchaseProduct(_ product: SKProduct, completion: @escaping (Response<Payment>) -> Void) {
+    fileprivate func purchaseProduct(_ product: SatelliteProduct, completion: @escaping (Response<Payment>) -> Void) throws {
         // check already have this product to be purchased
         let purchase = Purchase(product: product, completion: completion)
         guard !purchases.contains(purchase) else { return }
         // append
         purchases.append(purchase)
-        // start payment
-        let payment = SKPayment(product: product)
-        DispatchQueue.main.async {
-            SKPaymentQueue.default().add(payment)
-        }
+        // call engine
+        try engine.purchase(product: product)
     }
     
     func restorePurchases(completion: @escaping (Response<[String]>) -> Void) {
         self.restoreCompletion = completion
-        SKPaymentQueue.default().restoreCompletedTransactions()
+        engine.restoreCompletedTransactions()
     }
     
-    func getProduct(identifier: String, completion: @escaping (Response<SKProduct>) -> Void) {
+    func getProduct(identifier: String, completion: @escaping (Response<SatelliteProduct>) -> Void) {
         // synchronize
         lock.lock()
         defer { lock.unlock() }
         // start
-        let fetch = Fetch(productIdentifier: identifier, completion: completion)
-        fetch.request.delegate = self
+        let request = engine.fetchProduct(identifier: identifier)
+        let fetch = Fetch(request: request, completion: completion)
         fetches.append(fetch)
-        fetch.request.start()
+        request.start()
     }
     
     // MARK: payment transaction observing
-    public func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+    func updatedTransactions(_ transactions: [SatelliteTransaction]) {
         // synchronize
         lock.lock()
         defer { lock.unlock() }
-        // complete transactions if needed
+        //
         for transaction in transactions {
-            switch transaction.transactionState {
-            case .purchased, .restored, .failed:
-                completeTransaction(transaction, error: transaction.error)
-            default:
-                break
+            guard transaction.isPurchasedOrRestored || transaction.error != nil else { continue }
+            // finish transaction
+            engine.complete(transaction: transaction)
+            // find purchase model
+            let items = purchases
+            for index in 0..<items.count {
+                let item = items[index]
+                guard item.product.productIdentifier == transaction.productIdentifier else { continue }
+                // run completion
+                if let error = transaction.error {
+                    item.completion(.failure(error))
+                } else { // purchased or restored
+                    let currencyCode: String = item.product.priceLocale.currencyCode ?? ""
+                    let payment = Payment(amount: item.product.price as Decimal, currency: currencyCode)
+                    item.completion(.success(payment))
+                }
+                // remove model
+                purchases.remove(at: index)
             }
+            
         }
     }
     
-    fileprivate func completeTransaction(_ transaction: SKPaymentTransaction, error: Error?) {
-        // finish one
-        SKPaymentQueue.default().finishTransaction(transaction)
-        // find model with product identifier
-        let productIdentifier = transaction.payment.productIdentifier
-        let items = purchases
-        for index in 0..<items.count {
-            let item = items[index]
-            guard item.product.productIdentifier == productIdentifier else { continue }
-            // run completion
-            if let error = error {
-                item.completion(.failure(error))
-            } else {
-                let currencyCode: String = item.product.priceLocale.currencyCode ?? ""
-                let payment = Payment(amount: item.product.price as Decimal, currency: currencyCode)
-                item.completion(.success(payment))
-            }
-            // remove model
-            purchases.remove(at: index)
-        }
-    }
-    
-    public func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
+    // MARK: satellite engine delegate
+    func restoreCompletedTransactionsFailed(error: Error) {
+        // run completion
         restoreCompletion?(.failure(error))
         restoreCompletion = nil
     }
     
-    public func paymentQueueRestoreCompletedTransactionsFinished(_ queue: SKPaymentQueue) {
-        // get restored product identifiers
-        var identifiers = [String]()
-        for transaction in queue.transactions {
-            guard transaction.transactionState == .restored else { continue }
-            identifiers.append(transaction.payment.productIdentifier)
-        }
+    func restoreCompletedTransactionsFinished(identifiers: [String]) {
         // run completion
         restoreCompletion?(.success(identifiers))
         restoreCompletion = nil
     }
     
-    // MARK: products request delegate
-    public func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
+    func productsRequest(_ request: SatelliteProductsRequest, didReceive response: [SatelliteProduct]) {
         // synchronize
         lock.lock()
         defer { lock.unlock() }
@@ -175,10 +184,10 @@ open class SatelliteStore: NSObject, SatelliteStoreProtocol, SKPaymentTransactio
         for index in 0..<items.count {
             let fetch = items[index]
             // find the request
-            guard fetch.request == request else { continue }
+            guard fetch.request.isEqual(request) else { continue }
             // run completion
-            let result: Response<SKProduct>
-            if let product = response.products.first {
+            let result: Response<SatelliteProduct>
+            if let product = response.first {
                 result = .success(product)
             } else {
                 let error = NSError(domain: NSCocoaErrorDomain, code: 0, userInfo: [NSLocalizedDescriptionKey : "No product found"])
