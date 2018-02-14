@@ -17,6 +17,7 @@
 		F65BB26220330B5A004B04DC /* SatelliteStoreSwiftUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65BB26120330B5A004B04DC /* SatelliteStoreSwiftUITests.swift */; };
 		F65BB27120330DA9004B04DC /* SatelliteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65BB27020330DA9004B04DC /* SatelliteStore.swift */; };
 		F65BB27320330F58004B04DC /* SatelliteStoreSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65BB27220330F58004B04DC /* SatelliteStoreSpec.swift */; };
+		F65BB27520341EFA004B04DC /* SatelliteEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65BB27420341EFA004B04DC /* SatelliteEngine.swift */; };
 		F8B030843A95F240E4405CF8 /* Pods_SatelliteStoreSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7C766F536B921AB599D9090 /* Pods_SatelliteStoreSwift.framework */; };
 /* End PBXBuildFile section */
 
@@ -61,6 +62,7 @@
 		F65BB26320330B5A004B04DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F65BB27020330DA9004B04DC /* SatelliteStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SatelliteStore.swift; sourceTree = "<group>"; };
 		F65BB27220330F58004B04DC /* SatelliteStoreSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteStoreSpec.swift; sourceTree = "<group>"; };
+		F65BB27420341EFA004B04DC /* SatelliteEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -172,6 +174,7 @@
 			isa = PBXGroup;
 			children = (
 				F65BB27020330DA9004B04DC /* SatelliteStore.swift */,
+				F65BB27420341EFA004B04DC /* SatelliteEngine.swift */,
 			);
 			name = src;
 			path = ../../src;
@@ -478,6 +481,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F65BB24420330B59004B04DC /* ViewController.swift in Sources */,
+				F65BB27520341EFA004B04DC /* SatelliteEngine.swift in Sources */,
 				F65BB24220330B59004B04DC /* AppDelegate.swift in Sources */,
 				F65BB27120330DA9004B04DC /* SatelliteStore.swift in Sources */,
 			);

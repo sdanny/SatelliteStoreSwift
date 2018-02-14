@@ -21,7 +21,7 @@ struct Payment {
 
 protocol SatelliteProduct: NSObjectProtocol {
     
-    var price: Decimal { get }
+    var price: NSDecimalNumber { get }
     var priceLocale: Locale { get }
     var productIdentifier: String { get }
 }
