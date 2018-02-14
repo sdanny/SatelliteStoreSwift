@@ -99,6 +99,7 @@ open class SatelliteStore: SatelliteStoreProtocol, SatelliteEngineDelegate {
         getProduct(identifier: identifier) { response in
             switch response {
             case .success(let product):
+                // since product is returned by the engine pass it implicitly
                 try! self.purchaseProduct(product, completion: completion)
             case .failure(let error):
                 completion(.failure(error))
@@ -158,7 +159,6 @@ open class SatelliteStore: SatelliteStoreProtocol, SatelliteEngineDelegate {
                 // remove model
                 purchases.remove(at: index)
             }
-            
         }
     }
     
