@@ -14,8 +14,9 @@
 		F65BB24720330B59004B04DC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F65BB24520330B59004B04DC /* Main.storyboard */; };
 		F65BB24920330B59004B04DC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F65BB24820330B59004B04DC /* Assets.xcassets */; };
 		F65BB24C20330B59004B04DC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F65BB24A20330B59004B04DC /* LaunchScreen.storyboard */; };
-		F65BB25720330B5A004B04DC /* SatelliteStoreSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65BB25620330B5A004B04DC /* SatelliteStoreSwiftTests.swift */; };
 		F65BB26220330B5A004B04DC /* SatelliteStoreSwiftUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65BB26120330B5A004B04DC /* SatelliteStoreSwiftUITests.swift */; };
+		F65BB27120330DA9004B04DC /* SatelliteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65BB27020330DA9004B04DC /* SatelliteStore.swift */; };
+		F65BB27320330F58004B04DC /* SatelliteStoreSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65BB27220330F58004B04DC /* SatelliteStoreSpec.swift */; };
 		F8B030843A95F240E4405CF8 /* Pods_SatelliteStoreSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7C766F536B921AB599D9090 /* Pods_SatelliteStoreSwift.framework */; };
 /* End PBXBuildFile section */
 
@@ -54,11 +55,12 @@
 		F65BB24B20330B59004B04DC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F65BB24D20330B59004B04DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F65BB25220330B5A004B04DC /* SatelliteStoreSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SatelliteStoreSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		F65BB25620330B5A004B04DC /* SatelliteStoreSwiftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteStoreSwiftTests.swift; sourceTree = "<group>"; };
 		F65BB25820330B5A004B04DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F65BB25D20330B5A004B04DC /* SatelliteStoreSwiftUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SatelliteStoreSwiftUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F65BB26120330B5A004B04DC /* SatelliteStoreSwiftUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteStoreSwiftUITests.swift; sourceTree = "<group>"; };
 		F65BB26320330B5A004B04DC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F65BB27020330DA9004B04DC /* SatelliteStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SatelliteStore.swift; sourceTree = "<group>"; };
+		F65BB27220330F58004B04DC /* SatelliteStoreSpec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteStoreSpec.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +139,7 @@
 		F65BB24020330B59004B04DC /* SatelliteStoreSwift */ = {
 			isa = PBXGroup;
 			children = (
+				F65BB26F20330DA9004B04DC /* src */,
 				F65BB24120330B59004B04DC /* AppDelegate.swift */,
 				F65BB24320330B59004B04DC /* ViewController.swift */,
 				F65BB24520330B59004B04DC /* Main.storyboard */,
@@ -150,7 +153,7 @@
 		F65BB25520330B5A004B04DC /* SatelliteStoreSwiftTests */ = {
 			isa = PBXGroup;
 			children = (
-				F65BB25620330B5A004B04DC /* SatelliteStoreSwiftTests.swift */,
+				F65BB27220330F58004B04DC /* SatelliteStoreSpec.swift */,
 				F65BB25820330B5A004B04DC /* Info.plist */,
 			);
 			path = SatelliteStoreSwiftTests;
@@ -163,6 +166,15 @@
 				F65BB26320330B5A004B04DC /* Info.plist */,
 			);
 			path = SatelliteStoreSwiftUITests;
+			sourceTree = "<group>";
+		};
+		F65BB26F20330DA9004B04DC /* src */ = {
+			isa = PBXGroup;
+			children = (
+				F65BB27020330DA9004B04DC /* SatelliteStore.swift */,
+			);
+			name = src;
+			path = ../../src;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -467,6 +479,7 @@
 			files = (
 				F65BB24420330B59004B04DC /* ViewController.swift in Sources */,
 				F65BB24220330B59004B04DC /* AppDelegate.swift in Sources */,
+				F65BB27120330DA9004B04DC /* SatelliteStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -474,7 +487,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F65BB25720330B5A004B04DC /* SatelliteStoreSwiftTests.swift in Sources */,
+				F65BB27320330F58004B04DC /* SatelliteStoreSpec.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

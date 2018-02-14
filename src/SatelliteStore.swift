@@ -9,26 +9,41 @@
 import UIKit
 import StoreKit
 
-class SatelliteStore: NSObject, SKPaymentTransactionObserver, SKProductsRequestDelegate {
+enum Response<Value> {
+    case success(Value)
+    case failure(Error)
+}
+
+struct Payment {
+    let amount: Decimal
+    let currency: String
+}
+
+protocol SatelliteProduct: NSObjectProtocol {
+    
+    var price: Decimal { get }
+    var priceLocale: Locale { get }
+    var productIdentifier: String { get }
+}
+
+protocol SatelliteStoreProtocol {
+    var isOpenForBusiness: Bool { get }
+    
+    func getProduct(identifier: String, completion: @escaping (Response<SKProduct>) -> Void)
+    func purchaseProduct(identifier: String, completion: @escaping (Response<Payment>) -> Void)
+    func restorePurchases(completion: @escaping (Response<[String]>) -> Void)
+}
+
+open class SatelliteStore: NSObject, SatelliteStoreProtocol, SKPaymentTransactionObserver, SKProductsRequestDelegate {
     
     static var shoppingCenter = SatelliteStore()
     
-    enum Response<Value> {
-        case success(Value)
-        case failure(Error)
-    }
-    
-    struct Payment {
-        let amount: Decimal
-        let currency: String
-    }
-    
-    struct Purchase: Equatable {
+    fileprivate struct Purchase: Equatable {
         let product: SKProduct
         let completion: (Response<Payment>) -> Void
     }
     
-    struct Fetch {
+    fileprivate struct Fetch {
         let productIdentifier: String
         let request: SKProductsRequest
         let completion: (Response<SKProduct>) -> Void
@@ -56,7 +71,7 @@ class SatelliteStore: NSObject, SKPaymentTransactionObserver, SKProductsRequestD
     }
     
     func purchaseProduct(identifier: String, completion: @escaping (Response<Payment>) -> Void) {
-        getProduct(identifier: identifier) { (response) in
+        getProduct(identifier: identifier) { response in
             switch response {
             case .success(let product):
                 self.purchaseProduct(product, completion: completion)
@@ -95,8 +110,8 @@ class SatelliteStore: NSObject, SKPaymentTransactionObserver, SKProductsRequestD
         fetch.request.start()
     }
     
-    // MARK: payment transaction observing methods
-    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+    // MARK: payment transaction observing
+    public func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
         // synchronize
         lock.lock()
         defer { lock.unlock() }
@@ -133,12 +148,12 @@ class SatelliteStore: NSObject, SKPaymentTransactionObserver, SKProductsRequestD
         }
     }
     
-    func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
+    public func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
         restoreCompletion?(.failure(error))
         restoreCompletion = nil
     }
     
-    func paymentQueueRestoreCompletedTransactionsFinished(_ queue: SKPaymentQueue) {
+    public func paymentQueueRestoreCompletedTransactionsFinished(_ queue: SKPaymentQueue) {
         // get restored product identifiers
         var identifiers = [String]()
         for transaction in queue.transactions {
@@ -150,8 +165,8 @@ class SatelliteStore: NSObject, SKPaymentTransactionObserver, SKProductsRequestD
         restoreCompletion = nil
     }
     
-    // MARK: products request delegate methods
-    func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
+    // MARK: products request delegate
+    public func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         // synchronize
         lock.lock()
         defer { lock.unlock() }
@@ -177,6 +192,6 @@ class SatelliteStore: NSObject, SKPaymentTransactionObserver, SKProductsRequestD
     
 }
 
-func == (lhs: SatelliteStore.Purchase, rhs: SatelliteStore.Purchase) -> Bool {
+fileprivate func == (lhs: SatelliteStore.Purchase, rhs: SatelliteStore.Purchase) -> Bool {
     return lhs.product.productIdentifier == rhs.product.productIdentifier
 }
